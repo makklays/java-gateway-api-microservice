@@ -1,0 +1,50 @@
+
+spring:
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.r2dbc.R2dbcAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.r2dbc.R2dbcDataAutoConfiguration
+  cloud:
+    gateway:
+      routes:
+        - id: user-service
+          uri: http://user-service
+          predicates:
+            - Path=/api/users/**
+            - Method=GET,POST
+            - Header=X-API-VERSION, v2
+            # - Path=/api/v2/users/**
+          filters:
+            - RewritePath=/api/users/(?<segment>.*), /users/${segment}    # /api/users/1 → /users/1
+
+        - id: order-service
+          uri: http://order-service
+          predicates:
+            - Path=/api/orders/**         # маршруты к order-service
+            - Method=GET,POST,PUT,DELETE  # поддерживаемые HTTP методы
+            - Header=X-API-VERSION, v1
+          filters:
+            - RewritePath=/api/orders/(?<segment>.*), /orders/${segment}  # /api/orders/123 → /orders/123
+
+resilience4j:
+  retry:
+    instances:
+      userServiceRetry:
+        max-attempts: 3
+        wait-duration: 500ms
+  circuitbreaker:
+    instances:
+      userServiceCB:
+        register-health-indicator: true
+        sliding-window-size: 10
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 5s
+
+management:
+  health:
+    r2dbc:
+      enabled: false
+
+server:
+  port: 8088
