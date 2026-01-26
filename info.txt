@@ -1,1 +1,52 @@
 
+Client
+  ↓ Authorization: Bearer <token>
+API Gateway
+  1. Проверка JWT (auth)
+  2. Генерация / извлечение Correlation-Id
+  3. Логирование (включая correlationId)
+  4. Проксирование в downstream сервисы
+  5. Добавление Correlation-Id в response
+
+Порядок фильтров (критично)
+SecurityWebFiltersOrder.AUTHENTICATION - JWT
+SecurityWebFiltersOrder.AUTHORIZATION
+SecurityWebFiltersOrder.FIRST - CorrelationIdFilter
+SecurityWebFiltersOrder.LAST - LoggingFilter
+
+-------------------
+Как должен выглядеть JWT в Auth-service
+Пример payload
+{
+  "sub": "123",
+  "username": "alex",
+  "scope": "USER",
+  "iat": 1700000000,
+  "exp": 1700003600
+}
+
+Пример генерации JWT (правильно)
+
+String token = Jwts.builder()
+    .setSubject(userId.toString())
+    .claim("username", user.getUsername())
+    .claim("scope", "USER")
+    .setIssuedAt(new Date())
+    .setExpiration(Date.from(Instant.now().plus(1, ChronoUnit.HOURS)))
+    .signWith(SignatureAlgorithm.HS256, secretKey)
+    .compact();
+✔ Такой токен API Gateway может проверить сам
+
+Проверка JWT в API Gateway — правильно
+❌ Не через кастомный WebFilter вручную
+✔ Через Spring Security Resource Server
+
+http
+  .oauth2ResourceServer(oauth2 -> oauth2.jwt());
+
+Gateway:
+проверяет подпись
+проверяет exp
+кладёт Authentication в context
+----------------
+
