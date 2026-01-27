@@ -2,6 +2,7 @@ package com.techmatrix18.filter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -20,6 +21,7 @@ import reactor.core.publisher.Mono;
  * @since 19.01.2026
  */
 @Component
+@Order(4)
 public class LoggingFilter implements WebFilter {
 
     private static final Logger log = LoggerFactory.getLogger(LoggingFilter.class);
@@ -36,12 +38,23 @@ public class LoggingFilter implements WebFilter {
 
         log.info("Incoming request: {} {}", method, path);
 
-        return chain.filter(exchange)
+        /*return chain.filter(exchange)
             .doOnSuccess(aVoid -> {
                 int status = exchange.getResponse().getStatusCode() != null
                         ? exchange.getResponse().getStatusCode().value()
                         : 0;
                 log.info("Response status: {} for {} {}", status, method, path);
+            });*/
+
+        return chain.filter(exchange)
+            .doOnEach(signal -> {
+                if (signal.isOnNext()) {
+                    signal.getContextView()
+                        .getOrEmpty("X-Correlation-Id")
+                        .ifPresent(cid ->
+                            log.info("Request {} {} [cid={}]", exchange.getRequest().getMethod(), exchange.getRequest().getURI(), cid)
+                        );
+                }
             });
     }
 }

@@ -2,6 +2,7 @@ package com.techmatrix18.filter;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -32,13 +33,14 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @since 19.01.2026
  */
 @Component
+@Order(2)
 public class RateLimitFilter implements WebFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
 
     // простой in-memory rate limiter (IP → счетчик)
     private final Map<String, AtomicInteger> requestCounts = new ConcurrentHashMap<>();
-    private final int MAX_REQUESTS = 5; // максимум запросов
+    private final int MAX_REQUESTS = 500; // максимум запросов
     private final Duration WINDOW = Duration.ofMinutes(1); // временное окно
 
     @Override

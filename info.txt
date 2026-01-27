@@ -50,3 +50,124 @@ Gateway:
 кладёт Authentication в context
 ----------------
 
+Где именно он стоит в цепочке
+Фактический пайплайн выглядит примерно так:
+Netty
+ ↓
+WebFilter #1  (CorrelationIdFilter)
+ ↓
+WebFilter #2  (Spring Security filters)
+ ↓
+WebFilter #3  (LoggingFilter)
+ ↓
+Controller / RouterFunction
+
+📌 Все WebFilter идут ДО контроллера
+-----------------
+
+ВАЖНО: порядок фильтров ⚠️
+По умолчанию:
+порядок не гарантирован
+Spring сам решает
+
+Если тебе важно, чтобы:
+correlationId был до логирования
+correlationId был до WebClient
+
+👉 Нужно явно задать порядок
+
+Как задать порядок (правильно) ?
+
+Вариант 1 — @Order (проще)
+@Component
+@Order(Ordered.HIGHEST_PRECEDENCE)
+public class CorrelationIdFilter implements WebFilter
+
+@Component
+@Order(Ordered.LOWEST_PRECEDENCE)
+public class LoggingFilter implements WebFilter
+
+Вариант 2 — через SecurityWebFiltersOrder
+
+Если фильтр — security-related:
+http.addFilterAt(correlationIdFilter, SecurityWebFiltersOrder.FIRST);
+
+Но для correlation ID лучше @Order.
+------------------
+
+Как это выглядит в итоге
+Client
+ ├─ Authorization: Bearer jwt
+ ├─ tmx-correlation-id (optional)
+ ↓
+API Gateway (TrackingFilter)
+ ├─ generate correlationId (if missing)
+ ├─ add to request
+ ├─ add to response
+ ├─ put into context
+ ↓
+Downstream services
+ ├─ see tmx-correlation-id
+ ↓
+Client receives response
+ └─ tmx-correlation-id
+------------------
+
+Как Zipkin вообще работает (ключевой момент)
+Zipkin НЕ читает данные из твоей БД.
+
+Типовая схема:
+Service
+  ↓ (span)
+Collector (Zipkin)
+  ↓
+Storage (ElasticSearch / MySQL / Cassandra)
+  ↓
+Zipkin UI
+
+📌 Трассировка:
+собирается в памяти
+отправляется асинхронно
+хранится в хранилище Zipkin, а не в твоём сервисе
+------------------
+
+Что именно делает correlation-фильтр
+Правильный фильтр:
+Проверяет: пришёл ли correlationId
+Если нет — генерирует
+
+Добавляет:
+в request headers
+в response headers
+в лог-контекст
+Пробрасывает дальше
+
+А как же Zipkin / трассировки?
+Важный момент ⚠️
+
+Zipkin работает с:
+traceId
+spanId
+
+CorrelationId:
+НЕ обязателен для Zipkin
+НЕ генерируется Zipkin
+Но:
+✔ correlationId можно добавить как tag
+✔ или как baggage
+
+И тогда ты видишь бизнес-контекст внутри trace
+
+Хорошая ментальная модель 🧠
+CorrelationId = "КТО этот запрос?"
+TraceId       = "КАК он технически выполнялся?"
+------------------
+
+РЕКОМЕНДУЕМЫЙ ПОРЯДОК ФИЛЬТРОВ (WebFlux)
+Итоговая цепочка
+1. CorrelationIdFilter   (самый первый)
+2. RateLimitFilter
+3. JwtAuthenticationFilter
+4. LoggingFilter         (самый последний)
+------------------
+

@@ -1,7 +1,12 @@
 package com.techmatrix18.filter;
 
+import io.jsonwebtoken.JwtException;
+import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.security.core.userdetails.User;
@@ -12,6 +17,8 @@ import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+
+import java.util.List;
 
 /**
  * Reactive filter that validates JWT tokens in incoming requests.
@@ -27,6 +34,7 @@ import io.jsonwebtoken.Jwts;
  * @since 19.01.2026
  */
 @Component
+@Order(3)
 public class JwtAuthenticationFilter implements WebFilter {
 
     private final String secretKey = "my-secret-key"; // В проде — брать из конфигурации / Vault
@@ -40,23 +48,25 @@ public class JwtAuthenticationFilter implements WebFilter {
 
             try {
                 Claims claims = Jwts.parser()
-                    .setSigningKey(secretKey.getBytes())
-                    .parseClaimsJws(token)
-                    .getBody();
+                        .setSigningKey(secretKey.getBytes())
+                        .parseClaimsJws(token)
+                        .getBody();
 
                 String username = claims.getSubject();
+                List<GrantedAuthority> authorities = List.of(new SimpleGrantedAuthority("ROLE_USER"));
 
                 if (username != null) {
                     UsernamePasswordAuthenticationToken auth = new UsernamePasswordAuthenticationToken(
-                        new User(username, "", null), null, null);
+                            new User(username, "", null), null, authorities);
 
                     return chain.filter(exchange)
-                        .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(
-                            Mono.just(new SecurityContextImpl(auth))));
+                            .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(
+                                    Mono.just(new SecurityContextImpl(auth))));
                 }
 
-            } catch (Exception e) {
-                // invalid token → просто пропускаем, SecurityConfig откажет
+            } catch (JwtException e) {
+                exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
+                return exchange.getResponse().setComplete();
             }
         }
 

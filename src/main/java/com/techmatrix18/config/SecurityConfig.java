@@ -2,10 +2,14 @@ package com.techmatrix18.config;
 
 import com.techmatrix18.filter.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
 import org.springframework.security.web.server.SecurityWebFilterChain;
+import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
+import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
+import org.springframework.security.web.server.authorization.HttpStatusServerAccessDeniedHandler;
 
 /**
  * Security configuration for the API Gateway.
@@ -23,23 +27,28 @@ import org.springframework.security.web.server.SecurityWebFilterChain;
 @EnableWebFluxSecurity
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtFilter;
-
-    public SecurityConfig(JwtAuthenticationFilter jwtFilter) {
-        this.jwtFilter = jwtFilter;
-    }
-
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+
+        ServerAuthenticationEntryPoint entryPoint = new HttpStatusServerEntryPoint(HttpStatus.UNAUTHORIZED);
+        var accessDeniedHandler = new HttpStatusServerAccessDeniedHandler(HttpStatus.FORBIDDEN);
+
         http
             // CSRF выключен для stateless JWT
             .csrf(csrf -> csrf.disable())
 
             .authorizeExchange(exchanges -> exchanges
-                    .pathMatchers("/actuator/**").permitAll()
-                    .anyExchange().authenticated()
+                .pathMatchers("/actuator/**").permitAll()
+                .pathMatchers("/admin/**").hasRole("ADMIN")
+                .pathMatchers("/user/**").hasAnyRole("USER", "ADMIN")
+                .pathMatchers("/api/v1/users/**").authenticated() // need JWT
+                .anyExchange().denyAll()
             )
-            .addFilterAt(jwtFilter, SecurityWebFiltersOrder.AUTHENTICATION);
+
+            .exceptionHandling(ex -> ex
+                    .authenticationEntryPoint(entryPoint)
+                    .accessDeniedHandler(accessDeniedHandler)
+            );
 
         return http.build();
     }
