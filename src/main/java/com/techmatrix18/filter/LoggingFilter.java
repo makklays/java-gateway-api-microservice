@@ -29,7 +29,7 @@ public class LoggingFilter implements WebFilter {
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
 
-        // Получаем метод безопасно
+        // Safely retrieve the method
         String method = exchange.getRequest().getMethod() != null
             ? exchange.getRequest().getMethod().name()
             : "UNKNOWN";

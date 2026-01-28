@@ -38,10 +38,10 @@ public class RateLimitFilter implements WebFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
 
-    // простой in-memory rate limiter (IP → счетчик)
+    // simple in-memory rate limiter (IP → counter)
     private final Map<String, AtomicInteger> requestCounts = new ConcurrentHashMap<>();
-    private final int MAX_REQUESTS = 500; // максимум запросов
-    private final Duration WINDOW = Duration.ofMinutes(1); // временное окно
+    private final int MAX_REQUESTS = 500; // maximum requests per window
+    private final Duration WINDOW = Duration.ofMinutes(1); // time window
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -58,7 +58,7 @@ public class RateLimitFilter implements WebFilter {
             return exchange.getResponse().setComplete();
         }
 
-        // сброс счетчика через WINDOW
+        // reset counter via WINDOW
         Mono.delay(WINDOW).subscribe(aLong -> requestCounts.get(ip).decrementAndGet());
 
         return chain.filter(exchange);

@@ -3,6 +3,7 @@ package com.techmatrix18.config;
 import com.techmatrix18.filter.JwtAuthenticationFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
 import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
@@ -22,10 +23,18 @@ import org.springframework.security.web.server.authorization.HttpStatusServerAcc
  * @author Alexander Kuziv <makklays@gmail.com>
  * @company TechMatrix18
  * @version 0.0.1
- * @since 19.01.2026
+ * @since 28.01.2026
  */
 @EnableWebFluxSecurity
+@EnableReactiveMethodSecurity // enables support @PreAuthorize and @RolesAllowed
 public class SecurityConfig {
+
+    private final JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    // Inject the filter through the constructor
+    public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter) {
+        this.jwtAuthenticationFilter = jwtAuthenticationFilter;
+    }
 
     @Bean
     public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
@@ -34,9 +43,13 @@ public class SecurityConfig {
         var accessDeniedHandler = new HttpStatusServerAccessDeniedHandler(HttpStatus.FORBIDDEN);
 
         http
-            // CSRF выключен для stateless JWT
+            // CSRF is disabled for stateless JWT
             .csrf(csrf -> csrf.disable())
 
+            // Add our JWT filter at the Authentication position
+            .addFilterAt(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
+
+            // URL authorization settings
             .authorizeExchange(exchanges -> exchanges
                 .pathMatchers("/actuator/**").permitAll()
                 .pathMatchers("/admin/**").hasRole("ADMIN")
@@ -45,9 +58,10 @@ public class SecurityConfig {
                 .anyExchange().denyAll()
             )
 
+            // Handling authentication and access errors
             .exceptionHandling(ex -> ex
-                    .authenticationEntryPoint(entryPoint)
-                    .accessDeniedHandler(accessDeniedHandler)
+                .authenticationEntryPoint(entryPoint)
+                .accessDeniedHandler(accessDeniedHandler)
             );
 
         return http.build();

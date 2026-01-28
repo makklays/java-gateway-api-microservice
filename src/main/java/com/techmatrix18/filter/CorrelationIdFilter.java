@@ -9,6 +9,14 @@ import reactor.core.publisher.Mono;
 
 import java.util.UUID;
 
+/**
+ * WebFlux filter for managing correlation IDs in HTTP requests.
+ *
+ * @author Alexander Kuziv <makklays@gmail.com>
+ * @company TechMatrix18
+ * @version 0.0.1
+ * @since 28.01.2026
+ */
 @Component
 @Order(1)
 public class CorrelationIdFilter implements WebFilter {
