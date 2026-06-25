@@ -10,6 +10,13 @@ import reactor.core.publisher.Mono;
 
 import java.util.List;
 
+// В вашей текущей архитектуре этот файл не нужен и его следует удалить.
+// Данный класс пытается вручную делать HTTP-запросы из кода. В правильном API Gateway вся маршрутизация
+// происходит автоматически через настройки application.yml
+// Шлюзу не нужно знать про OrderDto.class и парсить списки данных, его задача — просто перенаправить байты трафика
+
+// Пример использования CircuitBreaker и Retry из Resilience4j для демонстрации устойчивости к сбоям при вызовах внешнего сервиса.
+
 /**
  * Client for interacting with the User Service via HTTP.
  *
@@ -49,7 +56,7 @@ import java.util.List;
  * @version 0.0.1
  * @since 19.01.2026
  */
-@Component
+/*@Component
 public class UserServiceClient {
 
     private final WebClient webClient;
@@ -82,5 +89,5 @@ public class UserServiceClient {
         // можно вернуть дефолтного пользователя или пустой Mono
         return Mono.empty();
     }
-}
+}*/
 

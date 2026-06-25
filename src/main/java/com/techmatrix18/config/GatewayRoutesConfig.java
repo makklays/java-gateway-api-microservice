@@ -5,6 +5,9 @@ import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+// В Spring Cloud Gateway есть два взаимоисключающих способа настраивать маршруты: либо жестко в Java-коде (как в этом файле),
+// либо динамически в конфигурационном файле application.yml - как в данном случае (! в файле application.yml)
+
 /**
  * Configuration class for defining API Gateway routes.
  * <p>
@@ -17,7 +20,7 @@ import org.springframework.context.annotation.Configuration;
  * @version 0.0.1
  * @since 19.01.2026
  */
-@Configuration
+/*@Configuration
 public class GatewayRoutesConfig {
 
     @Bean
@@ -46,5 +49,5 @@ public class GatewayRoutesConfig {
 
             .build();
     }
-}
+}*/
 

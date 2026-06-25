@@ -2,6 +2,9 @@ package com.techmatrix18.dto;
 
 import java.util.List;
 
+// Класс DTO, который использовался удаленными ранее клиентами (OrderServiceClient).
+// В текущем проекте Gateway API этот класс не нужен, и его следует удалить.
+
 /**
  * DTO representing a user together with their orders.
  *
@@ -10,7 +13,7 @@ import java.util.List;
  * @version 0.0.1
  * @since 20.01.2026
  */
-public class UserWithOrdersDto {
+/*public class UserWithOrdersDto {
 
     private Long userId;
     private String username;
@@ -57,5 +60,5 @@ public class UserWithOrdersDto {
     public void setOrders(List<OrderDto> orders) {
         this.orders = orders;
     }
-}
+}*/
 

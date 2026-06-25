@@ -12,6 +12,8 @@ import org.springframework.security.web.server.ServerAuthenticationEntryPoint;
 import org.springframework.security.web.server.authentication.HttpStatusServerEntryPoint;
 import org.springframework.security.web.server.authorization.HttpStatusServerAccessDeniedHandler;
 
+// Этот файл — сердце безопасности вашего приложения. Он настраивает Spring Security для работы в реактивном режиме (WebFlux)
+
 /**
  * Security configuration for the API Gateway.
  *
@@ -51,10 +53,21 @@ public class SecurityConfig {
 
             // URL authorization settings
             .authorizeExchange(exchanges -> exchanges
+                // 1. Открытые пути (не требуют авторизации)
                 .pathMatchers("/actuator/**").permitAll()
+                .pathMatchers("/api/v1/auth/**", "/oauth2/**").permitAll() // Вход/регистрация в OAuth2 сервис
+
                 .pathMatchers("/admin/**").hasRole("ADMIN")
                 .pathMatchers("/user/**").hasAnyRole("USER", "ADMIN")
+
+                // 2. Пути, требующие авторизации (нужен валидный JWT)
                 .pathMatchers("/api/v1/users/**").authenticated() // need JWT
+                .pathMatchers("/api/v1/currencies/**").authenticated()
+                .pathMatchers("/api/v1/credit-cards/**").authenticated()
+                .pathMatchers("/api/v1/payments/**").authenticated() // Ваша Сага
+                .pathMatchers("/api/v1/monitoring/**").hasRole("ADMIN") // Мониторинг только для админов
+
+                // 3. Всё остальное — закрыто
                 .anyExchange().denyAll()
             )
 

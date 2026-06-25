@@ -1,4 +1,49 @@
 
+API Gateway: Описание и особенности архитектуры
+
+Этот микросервис построен на базе Spring Cloud Gateway и Spring WebFlux.
+Он является единственной точкой входа (Reverse Proxy) для всех внешних клиентов, отвечая за безопасность,
+маршрутизацию и стабильность системы.
+
+Почему у API Gateway нет и не должно быть Базы Данных (БД):
+
+- Принцип Stateless (Без состояния): Шлюз должен быть максимально легковесным и быстрым, чтобы выдерживать колоссальные
+потоки трафика. Любая работа с БД (даже реактивной) замедляла бы его работу.
+- Изоляция микросервисов: Каждая база данных (например, ms_credit_cards, ms_payments) жестко принадлежит только своему
+сервису. Шлюз не имеет права лезть в них напрямую.
+- Отсутствие бизнес-логики: Шлюз не обрабатывает данные, он лишь транзитом пересылает байты (JSON) в нужные контейнеры
+на основе правил маршрутизации. Ему нечего сохранять.
+
+Декларативная маршрутизация в application.yml:
+
+- Все правила перенаправления запросов прописаны в одном текстовом файле application.yml, что позволяет отказаться от
+жестко закодированных Java-классов (RouteLocator) и менять порты/адреса на лету без пересборки проекта.
+- Архитектура полностью заточена под Docker-сеть: : вместо хрупких localhost-адресов шлюз использует для маршрутизации
+постоянные имена Docker-контейнеров (например, http://credit-card-container:8081).
+
+Что ещё было настроено и учтено (Важные детали):
+
+- Отказ от Eureka Server: Механизм Service Discovery (eureka) полностью отключен и закомментирован, так как встроенный
+DNS-сервер Docker самостоятельно связывает контейнеры по их именам.
+- Сквозной Correlation ID (Трассировка): Каждому входящему запросу шлюз автоматически присваивает уникальный X-Correlation-Id.
+Этот ID передается в микросервисы по HTTP, а оттуда — в Kafka, что позволяет отслеживать шаги вашей централизованной Саги
+в единой цепочке логов.
+- Защита шлюза (Реактивные фильтры): Внедрен встроенный RateLimitFilter для защиты системы от DDoS (лимит 500 запросов
+в минуту с одного IP) и LoggingFilter для реактивного мониторинга статусов ответов.
+- Централизованная безопасность: Настроен SecurityConfig на базе встроенного OAuth2 Resource Server, который централизованно
+проверяет JWT-токены клиентов по открытому ключу jwt-public.pem прямо на входе, избавляя остальные микросервисы от
+необходимости проверять безопасность вручную.
+
+Почему архитектурно шлюзу не нужна Kafka?
+
+- Шлюз (Gateway API) работает исключительно с синхронным HTTP-трафиком от клиентов (браузеры, мобильные приложения, Postman).
+Он принимает HTTP-запрос и перенаправляет его дальше по HTTP в payments-service.
+- Централизованная Сага и обмен сообщениями через Kafka — это внутренняя, скрытая от клиента кухня.
+Запускать Сагу, слать команды и слушать ответы в Kafka должен payments-service (Оркестратор), но не шлюз.
+Шлюзу просто незачем общаться с брокером сообщений.
+
+
+
 Client
   ↓ Authorization: Bearer <token>
 API Gateway
@@ -53,13 +98,13 @@ Gateway:
 Где именно он стоит в цепочке
 Фактический пайплайн выглядит примерно так:
 Netty
- ↓
+   ↓
 WebFilter #1  (CorrelationIdFilter)
- ↓
+   ↓
 WebFilter #2  (Spring Security filters)
- ↓
+   ↓
 WebFilter #3  (LoggingFilter)
- ↓
+   ↓
 Controller / RouterFunction
 
 📌 Все WebFilter идут ДО контроллера
@@ -97,20 +142,20 @@ http.addFilterAt(correlationIdFilter, SecurityWebFiltersOrder.FIRST);
 
 Как это выглядит в итоге
 Client
- ├─ Authorization: Bearer jwt
- ├─ tmx-correlation-id (optional)
- ↓
+   ├─ Authorization: Bearer jwt
+   ├─ tmx-correlation-id (optional)
+   ↓
 API Gateway (TrackingFilter)
- ├─ generate correlationId (if missing)
- ├─ add to request
- ├─ add to response
- ├─ put into context
- ↓
+   ├─ generate correlationId (if missing)
+   ├─ add to request
+   ├─ add to response
+   ├─ put into context
+   ↓
 Downstream services
- ├─ see tmx-correlation-id
- ↓
+   ├─ see tmx-correlation-id
+   ↓
 Client receives response
- └─ tmx-correlation-id
+   └─ tmx-correlation-id
 ------------------
 
 Как Zipkin вообще работает (ключевой момент)
@@ -118,11 +163,11 @@ Zipkin НЕ читает данные из твоей БД.
 
 Типовая схема:
 Service
-  ↓ (span)
+   ↓ (span)
 Collector (Zipkin)
-  ↓
+   ↓
 Storage (ElasticSearch / MySQL / Cassandra)
-  ↓
+   ↓
 Zipkin UI
 
 📌 Трассировка:

@@ -19,7 +19,6 @@ import org.springframework.web.server.WebFilter;
 import org.springframework.web.server.WebFilterChain;
 import reactor.core.publisher.Mono;
 
-import java.nio.file.Files;
 import java.security.KeyFactory;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
@@ -47,16 +46,21 @@ public class JwtAuthenticationFilter implements WebFilter {
 
     public JwtAuthenticationFilter() {
         try {
-            // Load the public key from the public.pem file in the root of the project
+            // ИСПРАВЛЕНО: Безопасное чтение файла из JAR-архива внутри Docker
             Resource resource = new ClassPathResource("jwt-public.pem");
-            String key = new String(Files.readAllBytes(resource.getFile().toPath()))
+            byte[] keyBytes;
+            try (var inputStream = resource.getInputStream()) {
+                keyBytes = inputStream.readAllBytes();
+            }
+
+            String key = new String(keyBytes)
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");
 
             byte[] decoded = Base64.getDecoder().decode(key);
             X509EncodedKeySpec spec = new X509EncodedKeySpec(decoded);
-            KeyFactory kf = KeyFactory.getInstance("RSA"); // or "EC" if using ECDSA
+            KeyFactory kf = KeyFactory.getInstance("RSA");
             publicKey = kf.generatePublic(spec);
 
         } catch (Exception e) {

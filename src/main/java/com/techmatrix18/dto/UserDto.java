@@ -1,5 +1,8 @@
 package com.techmatrix18.dto;
 
+// Класс DTO, который использовался удаленными ранее клиентами (OrderServiceClient).
+// В текущем проекте Gateway API этот класс не нужен, и его следует удалить.
+
 /**
  * DTO used to expose user information via public APIs.
  *
@@ -11,7 +14,7 @@ package com.techmatrix18.dto;
  * @version 0.0.1
  * @since 19.01.2026
  */
-public class UserDto {
+/*public class UserDto {
 
     private Long id;
     private String username;
@@ -43,5 +46,5 @@ public class UserDto {
     public String getEmail() {
         return email;
     }
-}
+}*/
 

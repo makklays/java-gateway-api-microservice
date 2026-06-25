@@ -3,6 +3,7 @@ package com.techmatrix18.filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -38,10 +39,16 @@ public class RateLimitFilter implements WebFilter {
 
     private static final Logger log = LoggerFactory.getLogger(RateLimitFilter.class);
 
+    // Храним объект Окна, чтобы знать, когда сбросить лимит
+    private static class WindowCounter {
+        final AtomicInteger count = new AtomicInteger(0);
+        long timestamp = System.currentTimeMillis();
+    }
+
     // simple in-memory rate limiter (IP → counter)
-    private final Map<String, AtomicInteger> requestCounts = new ConcurrentHashMap<>();
+    private final Map<String, WindowCounter> requestCounts = new ConcurrentHashMap<>();
     private final int MAX_REQUESTS = 500; // maximum requests per window
-    private final Duration WINDOW = Duration.ofMinutes(1); // time window
+    private final long WINDOW_MS = Duration.ofMinutes(1).toMillis(); // time window
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -49,17 +56,32 @@ public class RateLimitFilter implements WebFilter {
             ? exchange.getRequest().getRemoteAddress().getAddress().getHostAddress()
             : "unknown";
 
-        requestCounts.putIfAbsent(ip, new AtomicInteger(0));
-        int requests = requestCounts.get(ip).incrementAndGet();
+        long now = System.currentTimeMillis();
 
-        if (requests > MAX_REQUESTS) {
-            log.warn("Rate limit exceeded for IP: {}", ip);
-            exchange.getResponse().setStatusCode(org.springframework.http.HttpStatus.TOO_MANY_REQUESTS);
+        // Извлекаем или атомарно создаем счетчик для IP
+        WindowCounter counter = requestCounts.compute(ip, (key, currentWindow) -> {
+            if (currentWindow == null || (now - currentWindow.timestamp) > WINDOW_MS) {
+                // Если окна нет или оно устарело — создаем новое (чистый сброс лимита)
+                WindowCounter newWindow = new WindowCounter();
+                newWindow.count.set(1);
+                return newWindow;
+            }
+            // Иначе просто увеличиваем текущий счетчик
+            currentWindow.count.incrementAndGet();
+            return currentWindow;
+        });
+
+        if (counter.count.get() > MAX_REQUESTS) {
+            log.warn("Rate limit exceeded for IP: {}. Current count: {}", ip, counter.count.get());
+            exchange.getResponse().setStatusCode(HttpStatus.TOO_MANY_REQUESTS);
             return exchange.getResponse().setComplete();
         }
 
-        // reset counter via WINDOW
-        Mono.delay(WINDOW).subscribe(aLong -> requestCounts.get(ip).decrementAndGet());
+        // Периодическая фоновая очистка мапы от «мертвых» IP (чтобы не было OutOfMemory)
+        // Удаляем записи, которые не обновлялись больше 5 минут
+        if (requestCounts.size() > 5000) {
+            requestCounts.entrySet().removeIf(entry -> (now - entry.getValue().timestamp) > (WINDOW_MS * 5));
+        }
 
         return chain.filter(exchange);
     }

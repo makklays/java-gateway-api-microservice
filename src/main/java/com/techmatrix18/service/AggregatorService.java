@@ -1,14 +1,17 @@
 package com.techmatrix18.service;
 
-import com.techmatrix18.client.OrderServiceClient;
+// Этот класс — AggregatorService — реализует классический паттерн API Composition (Агрегатор). Он параллельно
+// (с помощью реактивного метода Mono.zip) запрашивал данные из двух разных мест (user-service и order-service)
+// и объединял их в один общий объект UserWithOrdersDto
+
+/*import com.techmatrix18.client.OrderServiceClient;
 import com.techmatrix18.client.UserServiceClient;
 import com.techmatrix18.dto.OrderDto;
 import com.techmatrix18.dto.UserDto;
 import com.techmatrix18.dto.UserWithOrdersDto;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-
-import java.util.List;
+import java.util.List;*/
 
 /**
  * Aggregator service that combines data from multiple microservices.
@@ -25,7 +28,7 @@ import java.util.List;
  * @version 0.0.1
  * @since 20.01.2026
  */
-@Service
+/*@Service
 public class AggregatorService {
 
     private final UserServiceClient userServiceClient;
@@ -48,5 +51,5 @@ public class AggregatorService {
                 tuple.getT2()
             ));
     }
-}
+}*/
 

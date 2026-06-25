@@ -1,5 +1,8 @@
 package com.techmatrix18.dto;
 
+// Класс DTO, который использовался удаленными ранее клиентами (OrderServiceClient).
+// В текущем проекте Gateway API этот класс не нужен, и его следует удалить.
+
 /**
  * DTO representing a single order.
  *
@@ -8,7 +11,7 @@ package com.techmatrix18.dto;
  * @version 0.0.1
  * @since 20.01.2026
  */
-public class OrderDto {
+/*public class OrderDto {
 
     private Long orderId;
     private String product;
@@ -45,5 +48,5 @@ public class OrderDto {
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
     }
-}
+}*/
 

@@ -3,6 +3,7 @@ package com.techmatrix18.filter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatusCode;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import org.springframework.web.server.WebFilter;
@@ -25,6 +26,7 @@ import reactor.core.publisher.Mono;
 public class LoggingFilter implements WebFilter {
 
     private static final Logger log = LoggerFactory.getLogger(LoggingFilter.class);
+    public static final String CORRELATION_ID_HEADER = "X-Correlation-Id";
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
@@ -33,9 +35,9 @@ public class LoggingFilter implements WebFilter {
         String method = exchange.getRequest().getMethod() != null
             ? exchange.getRequest().getMethod().name()
             : "UNKNOWN";
-
         String path = exchange.getRequest().getURI().getPath();
 
+        // 1. Логируем входящий запрос сразу
         log.info("Incoming request: {} {}", method, path);
 
         /*return chain.filter(exchange)
@@ -46,14 +48,21 @@ public class LoggingFilter implements WebFilter {
                 log.info("Response status: {} for {} {}", status, method, path);
             });*/
 
+        // 2. Передаем запрос дальше и вешаем хук на завершение (обработку ответа)
         return chain.filter(exchange)
             .doOnEach(signal -> {
-                if (signal.isOnNext()) {
+                // ИСПРАВЛЕНО: Для Mono<Void> ловим сигнал isOnComplete (успешный финиш) или isOnErrors
+                if (signal.isOnComplete()) {
+                    HttpStatusCode status = exchange.getResponse().getStatusCode();
+                    int statusCode = status != null ? status.value() : 200;
+
+                    // Вытаскиваем Correlation ID из реактивного контекста
                     signal.getContextView()
-                        .getOrEmpty("X-Correlation-Id")
-                        .ifPresent(cid ->
-                            log.info("Request {} {} [cid={}]", exchange.getRequest().getMethod(), exchange.getRequest().getURI(), cid)
-                        );
+                            .getOrEmpty(CORRELATION_ID_HEADER)
+                            .ifPresentOrElse(
+                                    cid -> log.info("Response status: {} for {} {} [cid={}]", statusCode, method, path, cid),
+                                    () -> log.info("Response status: {} for {} {} [no-cid]", statusCode, method, path)
+                            );
                 }
             });
     }
