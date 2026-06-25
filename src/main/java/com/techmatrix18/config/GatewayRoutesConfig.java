@@ -1,12 +1,13 @@
 package com.techmatrix18.config;
 
-import org.springframework.cloud.gateway.route.RouteLocator;
-import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
 // В Spring Cloud Gateway есть два взаимоисключающих способа настраивать маршруты: либо жестко в Java-коде (как в этом файле),
 // либо динамически в конфигурационном файле application.yml - как в данном случае (! в файле application.yml)
+
+
+/*import org.springframework.cloud.gateway.route.RouteLocator;
+import org.springframework.cloud.gateway.route.builder.RouteLocatorBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;*/
 
 /**
  * Configuration class for defining API Gateway routes.

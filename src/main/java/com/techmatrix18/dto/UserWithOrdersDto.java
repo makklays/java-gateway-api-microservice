@@ -1,9 +1,10 @@
 package com.techmatrix18.dto;
 
-import java.util.List;
-
 // Класс DTO, который использовался удаленными ранее клиентами (OrderServiceClient).
 // В текущем проекте Gateway API этот класс не нужен, и его следует удалить.
+
+
+// import java.util.List;
 
 /**
  * DTO representing a user together with their orders.

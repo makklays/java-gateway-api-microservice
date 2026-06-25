@@ -1,21 +1,21 @@
 package com.techmatrix18.client;
 
-import com.techmatrix18.dto.UserDto;
-import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
-import io.github.resilience4j.retry.annotation.Retry;
-import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
-
-import java.util.List;
-
 // В вашей текущей архитектуре этот файл не нужен и его следует удалить.
 // Данный класс пытается вручную делать HTTP-запросы из кода. В правильном API Gateway вся маршрутизация
 // происходит автоматически через настройки application.yml
 // Шлюзу не нужно знать про OrderDto.class и парсить списки данных, его задача — просто перенаправить байты трафика
 
 // Пример использования CircuitBreaker и Retry из Resilience4j для демонстрации устойчивости к сбоям при вызовах внешнего сервиса.
+
+
+/*import com.techmatrix18.dto.UserDto;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import io.github.resilience4j.retry.annotation.Retry;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Mono;
+import java.util.List;*/
 
 /**
  * Client for interacting with the User Service via HTTP.

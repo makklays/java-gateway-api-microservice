@@ -1,15 +1,16 @@
 package com.techmatrix18.client;
 
-import com.techmatrix18.dto.OrderDto;
-import org.springframework.stereotype.Component;
-import org.springframework.web.reactive.function.client.WebClient;
-import reactor.core.publisher.Mono;
-import java.util.List;
-
 // В вашей текущей архитектуре этот файл не нужен и его следует удалить.
 // Данный класс пытается вручную делать HTTP-запросы из кода. В правильном API Gateway вся маршрутизация
 // происходит автоматически через настройки application.yml
 // Шлюзу не нужно знать про OrderDto.class и парсить списки данных, его задача — просто перенаправить байты трафика
+
+
+/*import com.techmatrix18.dto.OrderDto;
+import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.client.WebClient;
+import reactor.core.publisher.Mono;
+import java.util.List;*/
 
 /**
  * Client for interacting with the Order Service via HTTP.

@@ -1,11 +1,12 @@
 package com.techmatrix18.config;
 
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.web.reactive.function.client.WebClient;
-
 // Этот шлюз нужен, если он делает кастомные запросы в коде.
 // Например, если нужно самостоятельно сходить по сети в другие микросервисы.
+
+
+/*import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.reactive.function.client.WebClient;*/
 
 /**
  * Configuration class for creating and configuring {@link WebClient} beans.

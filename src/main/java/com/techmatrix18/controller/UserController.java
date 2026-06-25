@@ -1,9 +1,7 @@
 package com.techmatrix18.controller;
 
-import com.techmatrix18.dto.UserDto;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Mono;
@@ -31,11 +29,6 @@ public class UserController {
     @PreAuthorize("hasRole('ADMIN')") // доступ только для роли ADMIN
     public Mono<String> adminEndpoint() {
         return Mono.just("Hello, ADMIN!");
-    }
-
-    @GetMapping("/{id}")
-    public UserDto getUser(@PathVariable Long id) {
-        return new UserDto(id, "Alex", "+380988705397", "makklays@gmail.com");
     }
 }
 

@@ -43,8 +43,8 @@ public class LoggingFilter implements WebFilter {
         /*return chain.filter(exchange)
             .doOnSuccess(aVoid -> {
                 int status = exchange.getResponse().getStatusCode() != null
-                        ? exchange.getResponse().getStatusCode().value()
-                        : 0;
+                    ? exchange.getResponse().getStatusCode().value()
+                    : 0;
                 log.info("Response status: {} for {} {}", status, method, path);
             });*/
 
@@ -58,11 +58,11 @@ public class LoggingFilter implements WebFilter {
 
                     // Вытаскиваем Correlation ID из реактивного контекста
                     signal.getContextView()
-                            .getOrEmpty(CORRELATION_ID_HEADER)
-                            .ifPresentOrElse(
-                                    cid -> log.info("Response status: {} for {} {} [cid={}]", statusCode, method, path, cid),
-                                    () -> log.info("Response status: {} for {} {} [no-cid]", statusCode, method, path)
-                            );
+                        .getOrEmpty(CORRELATION_ID_HEADER)
+                        .ifPresentOrElse(
+                            cid -> log.info("Response status: {} for {} {} [cid={}]", statusCode, method, path, cid),
+                            () -> log.info("Response status: {} for {} {} [no-cid]", statusCode, method, path)
+                        );
                 }
             });
     }
