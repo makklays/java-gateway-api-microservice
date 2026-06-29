@@ -39,6 +39,13 @@ public class CurrencyController {
         this.webClient = webClientBuilder.baseUrl(currencyServiceUrl).build();
     }
 
+    /**
+     * Получение списка базовых валют и курсов валют
+     * Этот метод делает HTTP GET запрос к удаленному микросервису валют.
+     * Если микросервис недоступен, срабатывает fallback метод.
+     *
+     * @return ResponseEntity с JSON-ответом от микросервиса или сообщение об ошибке
+     */
     @Retry(name = "currencyServiceRetry", fallbackMethod = "fallbackBaseCurrencies")
     @CircuitBreaker(name = "currencyServiceCB", fallbackMethod = "fallbackBaseCurrencies")
     @GetMapping("/base-currencies")
@@ -72,6 +79,14 @@ public class CurrencyController {
         ));
     }
 
+    /**
+     * Получение курса валюты по её коду (например, USD, EUR, GBP и т.д.)
+     * Этот метод делает HTTP GET запрос к удаленному микросервису валют.
+     * Если микросервис недоступен, срабатывает fallback метод.
+     *
+     * @param code
+     * @return ResponseEntity с JSON-ответом от микросервиса или сообщение об ошибке
+     */
     @Retry(name = "currencyServiceRetry", fallbackMethod = "fallbackCurrencyByCode")
     @CircuitBreaker(name = "currencyServiceCB", fallbackMethod = "fallbackCurrencyByCode")
     @GetMapping("/currency/{code}")
@@ -104,7 +119,11 @@ public class CurrencyController {
         ));
     }
 
-    // Метод PUT для обновления курса валюты по её коду
+    /**
+     * Метод PUT для обновления курса валюты по её коду
+     *
+     * @return ResponseEntity с JSON-ответом от микросервиса или сообщение об ошибке
+     */
     @PutMapping("/base-currencies/{code}")
     public ResponseEntity<Map> updateCurrencyRate(
             @PathVariable String code,
