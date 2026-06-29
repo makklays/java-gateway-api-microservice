@@ -34,8 +34,8 @@ public class CurrencyController {
     private final WebClient webClient;
 
     public CurrencyController(WebClient.Builder webClientBuilder,
-                              @Value("${currency-service.url}") String currencyServiceUrl) {
-        // Спринг подставит сюда готовый URL, и мы соберём WebClient
+                              @Value("${microservices.currency-url}") String currencyServiceUrl) {
+        // Spring подставит сюда готовый URL, и я соберу WebClient
         this.webClient = webClientBuilder.baseUrl(currencyServiceUrl).build();
     }
 
@@ -98,9 +98,9 @@ public class CurrencyController {
         log.error("Микросервис Валют недоступен при запросе валюты {}. Операция отменена. Ошибка: {}", code, e.getMessage());
 
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(Map.of(
-                "status", "SERVICE_DOWN",
-                "message", "Сервис обмена валют временно недоступен. Пожалуйста, повторите попытку позже.",
-                "timestamp", LocalDateTime.now().format(formatter)
+            "status", "SERVICE_DOWN",
+            "message", "Сервис обмена валют временно недоступен. Пожалуйста, повторите попытку позже.",
+            "timestamp", LocalDateTime.now().format(formatter)
         ));
     }
 
