@@ -1,4 +1,12 @@
 
+# Список микросервисов, на которые будет перенаправлять запросы API Gateway.
+microservices:
+  oauth2-url: ${OAUTH2_SERVICE_URL:http://oauth2-container:8087}
+  currency-url: ${CURRENCIES_SERVICE_URL:http://currencies-container:8081}
+  credit-cards-url: ${CREDIT_CARD_SERVICE_URL:http://credit-card-container:8081}
+  payments-url: ${PAYMENTS_SERVICE_URL:http://payments-container:8082}
+  monitoring-url: ${MONITORING_SERVICE_URL:http://monitoring-container:8084}
+
 spring:
   application:
     name: gateway-api
@@ -16,7 +24,7 @@ spring:
         # 1. Роутинг на сервис Авторизации (OAuth2)
         - id: oauth2-route
           # Перенаправляем на имя докер-контейнера сервиса авторизации
-          uri: ${OAUTH2_SERVICE_URL:http://oauth2-container:8087}
+          uri: ${microservices.oauth2-url}
           predicates:
             - Path=/api/v1/auth/**, /oauth2/**
           #  - Method=GET,POST
@@ -27,7 +35,7 @@ spring:
 
         # 2. Роутинг на сервис Валют (Currencies)
         - id: currencies-route
-          uri: ${CURRENCIES_SERVICE_URL:http://currencies-container:8081} # Порт 8081 внутри своего контейнера
+          uri: ${microservices.currency-url} # Порт 8081 внутри своего контейнера
           predicates:
             - Path=/api/v1/currencies/**
           #  - Method=GET,POST,PUT,DELETE  # поддерживаемые HTTP методы
@@ -35,19 +43,19 @@ spring:
 
         # 3. Роутинг на сервис Кредитных Карт
         - id: credit-cards-route
-          uri: http://credit-card-container:8081 # ИМЯ КОНТЕЙНЕРА вместо localhost!
+          uri: ${microservices.credit-cards-url} # ИМЯ КОНТЕЙНЕРА вместо localhost!
           predicates:
             - Path=/api/v1/credit-cards/**
 
         # 4. Сервис Платежей (Payments) — Участник Саги
         - id: payments-route
-          uri: ${PAYMENTS_SERVICE_URL:http://payments-container:8082}
+          uri: ${microservices.payments-url}
           predicates:
             - Path=/api/v1/payments/**
 
         # 5. Сервис Мониторинга (Monitoring)
         - id: monitoring-route
-          uri: ${MONITORING_SERVICE_URL:http://monitoring-container:8084}
+          uri: ${microservices.monitoring-url}
           predicates:
             - Path=/api/v1/monitoring/**
 
@@ -57,6 +65,16 @@ resilience4j:
       userServiceRetry:
         max-attempts: 3
         wait-duration: 500ms
+      currencyServiceRetry:
+        max-attempts: 3                        # Сколько всего попыток сделать (1 исходная + 2 повтора)
+        wait-duration: 500ms                   # Пауза между попытками (полсекунды)
+        # >>> ВКЛЮЧАЕМ ЭКСПОНЕНЦИАЛЬНУЮ ПАУЗУ <<<
+        enable-exponential-backoff: true
+        exponential-backoff-multiplier: 2      # Множитель (каждая следующая пауза в 2 раза дольше)
+        retry-exceptions:                      # При каких ошибках пытаться снова
+          - org.springframework.web.reactive.function.client.WebClientResponseException
+          - java.io.IOException
+          - java.util.concurrent.TimeoutException
   circuitbreaker:
     instances:
       userServiceCB:
@@ -65,6 +83,13 @@ resilience4j:
         minimum-number-of-calls: 5
         failure-rate-threshold: 50
         wait-duration-in-open-state: 5s
+      currencyServiceCB:
+        sliding-window-size: 10                # Анализировать последние 10 запросов
+        failure-rate-threshold: 50             # Размыкать цепь, если 50% запросов упали (5 из 10)
+        wait-duration-in-open-state: 15000ms   # Жвать 15 секунд в открытом состоянии перед проверкой
+        automatic-transition-from-open-to-half-open-enabled: true
+        register-health-indicator: true
+        minimum-number-of-calls: 5
 
 management:
   health:
