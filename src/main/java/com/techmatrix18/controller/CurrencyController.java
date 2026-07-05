@@ -90,13 +90,13 @@ public class CurrencyController {
      */
     @Retry(name = "currencyServiceRetry", fallbackMethod = "fallbackCurrencyByCode")
     @CircuitBreaker(name = "currencyServiceCB", fallbackMethod = "fallbackCurrencyByCode")
-    @GetMapping("/currency/{code}")
+    @GetMapping("/base-currencies/{code}")
     public ResponseEntity<Map> getCurrencyByCode(@PathVariable String code) {
         log.info("Шлюз: Запрос курса для валюты: {}", code);
 
         // Передаем переменную code в URI удаленного микросервиса
         Map response = this.webClient.get()
-            .uri("/api/v1/currencies/currency/{code}", code)   // Подстановка параметра
+            .uri("/api/v1/currencies/code/{code}", code)   // Подстановка параметра
             .retrieve()
             .bodyToMono(Map.class)
             .block(); // Синхронное ожидание ответа
@@ -165,7 +165,7 @@ public class CurrencyController {
 
         // Отправляем расширенный JSON в микросервис Валют
         Map response = this.webClient.put()
-            .uri("/api/v1/currencies/base-currencies/{code}", code)
+            .uri("/api/v1/currencies/code/{code}", code)
             .bodyValue(statRequestBody) // Спринг сам превратит эту Map в полноценный JSON
             .retrieve()
             .bodyToMono(Map.class)
@@ -208,14 +208,14 @@ public class CurrencyController {
             // --- ШАГ 1: Бэкап и обновление курса в Микросервисе Валют ---
             log.info("[Correlation-ID: {}] Сага ШАГ 1: Запрос старого курса {} для бэкапа...", correlationId, currencyCode);
             previousRate = this.webClient.get()
-                .uri("/api/v1/currencies/base-currencies/{code}", currencyCode)
+                .uri("/api/v1/currencies/code/{code}", currencyCode)
                 .header("X-Correlation-ID", correlationId) // Передаем Correlation ID
                 .retrieve()
                 .bodyToMono(Map.class)
                 .block();
 
             this.webClient.put()
-                .uri("/api/v1/currencies/base-currencies/{code}", currencyCode)
+                .uri("/api/v1/currencies/code/{code}", currencyCode)
                 .header("X-Correlation-ID", correlationId)
                 .bodyValue(Map.of("buy", buyPrice, "sell", sellPrice, "updatedAt", currentTime))
                 .retrieve()
@@ -276,7 +276,7 @@ public class CurrencyController {
         try {
             log.info("[Correlation-ID: {}] Откат: Возвращаем старый курс валюты {} в микросервис Валют...", correlationId, code);
             this.webClient.put()
-                .uri("/api/v1/currencies/base-currencies/{code}", code)
+                .uri("/api/v1/currencies/code/{code}", code)
                 .header("X-Correlation-ID", correlationId)
                 .bodyValue(Map.of("buy", previousRate.get("buy"), "sell", previousRate.get("sell"), "updatedAt", time))
                 .retrieve()
