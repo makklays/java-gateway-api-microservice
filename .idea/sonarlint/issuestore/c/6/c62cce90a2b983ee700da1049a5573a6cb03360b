@@ -1,7 +1,0 @@
-
-q
-java:S22598"OA "NullPointerException" could be thrown; "getRemoteAddress()" can return null.(ÈÓ˜¤ùÿÿÿÿ8˜ µï—4
-s	java:S1162"WRename this field "MAX_REQUESTS" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(ŒÃÙ8œ µï—4
-u	java:S1163"TRename this field "WINDOW_MS" to match the regular expression '^[a-z][a-zA-Z0-9]*$'.(Ùá÷îùÿÿÿÿ8œ µï—4
->
-java:S11702"!Make this final field static too.(ŒÃÙ8 µï—4
