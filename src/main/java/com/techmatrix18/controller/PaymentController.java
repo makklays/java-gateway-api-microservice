@@ -15,6 +15,7 @@ import java.util.Map;
  * @version 0.0.1
  * @since 26.06.2026
  */
+
 @RestController
 @RequestMapping("/api/v1/payments")
 public class PaymentController {

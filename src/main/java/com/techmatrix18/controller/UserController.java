@@ -15,6 +15,7 @@ import reactor.core.publisher.Mono;
  * @version 0.0.1
  * @since 28.01.2026
  */
+
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {

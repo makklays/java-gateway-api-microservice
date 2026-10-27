@@ -26,6 +26,7 @@ import java.util.UUID;
  * @version 0.0.1
  * @since 29.06.2026
  */
+
 @RestController
 @RequestMapping("/api/v1/currencies")
 public class CurrencyController {

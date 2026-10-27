@@ -1,0 +1,29 @@
+
+L
+java:S3740:"/Provide the parametrized type for this generic.(û§Ëû8¯ˆµï—4
+Q
+java:S3740_"/Provide the parametrized type for this generic.(¼åÃÖùÿÿÿÿ8±ˆµï—4
+L
+java:S3740c"/Provide the parametrized type for this generic.(û§Ëû8³ˆµï—4
+R
+java:S3740ƒ"/Provide the parametrized type for this generic.(óÉ‚õüÿÿÿÿ8´ˆµï—4
+R
+java:S3740¨"/Provide the parametrized type for this generic.(äñğçşÿÿÿÿ8·ˆµï—4
+
+java:S1192d"_Define a constant instead of duplicating this literal "/api/v1/currencies/code/{code}" 5 times.(ÛŠº‡úÿÿÿÿ8Òˆµï—4
+o
+java:S1192Õ"QDefine a constant instead of duplicating this literal "X-Correlation-ID" 6 times.(èºŒî8åˆµï—4
+o
+java:S1192é"LDefine a constant instead of duplicating this literal "GATEWAY-API" 3 times.(à§ıëüÿÿÿÿ8çˆµï—4
+m
+java:S1192¤"JDefine a constant instead of duplicating this literal "updatedAt" 3 times.(áÒØèÿÿÿÿÿ8èˆµï—4
+d
+java:S1192N"GDefine a constant instead of duplicating this literal "status" 7 times.(äÚªÉ8éˆµï—4
+j
+java:S1192O"HDefine a constant instead of duplicating this literal "message" 7 times.(Ê‡îÿÿÿÿÿ8êˆµï—4
+F
+java:S26297"$Invoke method(s) only conditionally.(’ İäúÿÿÿÿ8ÿˆµï—4
+J
+java:S1172J"(Remove this unused method parameter "e".(‚Øˆ¦ÿÿÿÿÿ8â™µï—4
+R
+java:S1172"/Remove this unused method parameter "errorMsg".(¥Ÿîìşÿÿÿÿ8Šœµï—4
