@@ -1,9 +1,11 @@
 package com.techmatrix18.controller;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.client.WebClient;
 import reactor.core.publisher.Mono;
 
 /**
@@ -19,6 +21,110 @@ import reactor.core.publisher.Mono;
 @RestController
 @RequestMapping("/api/v1/users")
 public class UserController {
+
+    private final WebClient webClient;
+
+    public UserController(@Value("${microservices.oauth2-url}") String oauth2ServiceUrl, WebClient.Builder webClient) {
+        this.webClient = webClient.baseUrl(oauth2ServiceUrl).build();
+    }
+
+    /**
+     * Public endpoint that forwards a request to the registration endpoint of 'OAuth2 service'.
+     * This method demonstrates how to use WebClient to make an HTTP GET request to another microservice.
+     *
+     * @return A Mono containing the response from the OAuth2 service.
+     */
+    @PostMapping("/registration")
+    public Mono<ResponseEntity<String>> publicEndpoint(
+            @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+            @RequestBody String request    // Принимаю просто как сырой текст JSON - без валидации и использовании DTO-класса
+    ) {
+        // отправляю запрос
+        return this.webClient.post()
+                .uri("/api/v1/oauth2/registration")    // Путь к эндпоинту в OAuth2 сервисе
+                .bodyValue(request)                        // Передаю JSON-строку, полученную от фронтенда
+                //.header("Idempotency-Key", idempotencyKey)
+                .headers(headers -> {
+                    // 1. Явно жестко задаем Content-Type (хотя WebClient делает это сам)
+                    headers.set("Content-Type", "application/json");
+                    // 2. Если фронтенд передал ключ идемпотентности, пробрасываю его в микросервис
+                    if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                        headers.set("Idempotency-Key", idempotencyKey);
+                    }
+                })
+                .retrieve()
+                // Использую toEntity вместо bodyToMono, чтобы Gateway вернул фронтенду
+                // точный HTTP-статус (например, 201 Created или 200 OK в случае повтора)
+                .toEntity(String.class);
+    }
+
+    /**
+     * Public endpoint that forwards a request to the login endpoint of 'OAuth2 service'.
+     *
+     * @return A Mono containing the response from the OAuth2 service.
+     */
+    @PostMapping("/login")
+    public Mono<ResponseEntity<String>> login(
+        @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+        @RequestBody String request,
+        ServerHttpRequest httpRequest
+    ) {
+        // 1. Получаем IP-адрес реального пользователя
+        String clientIp = httpRequest.getRemoteAddress() != null
+                ? httpRequest.getRemoteAddress().getAddress().getHostAddress()
+                : "unknown";
+
+        // 2. Получаем User-Agent (браузер / устройство) пользователя
+        String userAgent = httpRequest.getHeaders().getFirst("User-Agent");
+
+        // отправляю запрос
+        return this.webClient.post()
+                .uri("/api/v1/oauth2/login")   // Путь к эндпоинту в OAuth2 сервисе
+                .bodyValue(request)                // Передаю JSON-строку, полученную от фронтенда
+                .headers(headers -> {
+                    // 1. Явно жестко задаем Content-Type (хотя WebClient делает это сам)
+                    headers.set("Content-Type", "application/json");
+                    // 2. Если фронтенд передал ключ идемпотентности, пробрасываю его в микросервис
+                    if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                        headers.set("Idempotency-Key", idempotencyKey);
+                    }
+                    // 3. Пробрасываем сетевые данные в заголовках по стандарту HTTP
+                    headers.set("X-Forwarded-For", clientIp);
+                    if (userAgent != null) {
+                        headers.set("User-Agent", userAgent);
+                    }
+                })
+                .retrieve()
+                .toEntity(String.class);
+    }
+
+    /**
+     * Public endpoint that forwards a request to the refresh-token endpoint of 'OAuth2 service'.
+     *
+     * @return A Mono containing the response from the OAuth2 service.
+     */
+    @PostMapping("/refresh-token")
+    public Mono<ResponseEntity<String>> refreshToken(
+        @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
+        @RequestBody String request
+    ) {
+        // отправляю запрос
+        return this.webClient.post()
+                .uri("/api/v1/oauth2/refresh-token")   // Путь к эндпоинту в OAuth2 сервисе
+                .bodyValue(request)                        // Передаю JSON-строку, полученную от фронтенда
+                .headers(headers -> {
+                    // 1. Явно жестко задаем Content-Type (хотя WebClient делает это сам)
+                    headers.set("Content-Type", "application/json");
+                    // 2. Если фронтенд передал ключ идемпотентности, пробрасываю его в микросервис
+                    if (idempotencyKey != null && !idempotencyKey.isBlank()) {
+                        headers.set("Idempotency-Key", idempotencyKey);
+                    }
+                })
+                .retrieve()
+                .toEntity(String.class);
+    }
+
+    //---- остальные эндпоинты ----
 
     @GetMapping("/user")
     @PreAuthorize("hasRole('USER')") // доступ только для роли USER
