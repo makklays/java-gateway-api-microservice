@@ -1,5 +1,12 @@
 package com.techmatrix18.controller;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.enums.ParameterIn;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.server.reactive.ServerHttpRequest;
@@ -20,11 +27,15 @@ import reactor.core.publisher.Mono;
 
 @RestController
 @RequestMapping("/api/v1/users")
+@Tag(name = "User Controller", description = "Управление пользователями и аутентификация")
 public class UserController {
 
     private final WebClient webClient;
 
-    public UserController(@Value("${microservices.oauth2-url}") String oauth2ServiceUrl, WebClient.Builder webClient) {
+    public UserController(
+            @Value("${microservices.oauth2-url}") String oauth2ServiceUrl,
+            WebClient.Builder webClient)
+    {
         this.webClient = webClient.baseUrl(oauth2ServiceUrl).build();
     }
 
@@ -34,6 +45,29 @@ public class UserController {
      *
      * @return A Mono containing the response from the OAuth2 service.
      */
+    @Operation(
+            summary = "Регистрация нового пользователя",
+            description = "Принимает данные пользователя и пробрасывает запрос в OAuth2 сервис с поддержкой идемпотентности.",
+            parameters = {
+                    @Parameter(
+                            name = "Idempotency-Key",
+                            in = ParameterIn.HEADER,
+                            description = "Уникальный UUID ключ для предотвращения дубликатов запросов",
+                            required = false,
+                            schema = @Schema(type = "string", example = "123e4567-e89b-12d3-a456-426614174000")
+                    )
+            },
+            responses = {
+                    @ApiResponse(responseCode = "201", description = "Пользователь успешно создан / Токены сгенерированы"),
+                    @ApiResponse(responseCode = "200", description = "Повторный запрос с тем же Idempotency-Key - возвращает тот же результат"),
+                    @ApiResponse(responseCode = "400", description = "Неверный формат входных данных")
+            }
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Данные для регистрации пользователя",
+            required = true,
+            content = @Content(schema = @Schema(implementation = com.techmatrix18.dto.UserRegisterDto.class))
+    )
     @PostMapping("/registration")
     public Mono<ResponseEntity<String>> publicEndpoint(
             @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
@@ -63,6 +97,30 @@ public class UserController {
      *
      * @return A Mono containing the response from the OAuth2 service.
      */
+    @Operation(
+            summary = "Аутентификация пользователя (Вход)",
+            description = "Принимает учетные данные пользователя, обогащает запрос сетевыми заголовками (IP, User-Agent) и запрашивает токены у сервиса OAuth2.",
+            parameters = {
+                    @Parameter(
+                            name = "Idempotency-Key",
+                            in = ParameterIn.HEADER,
+                            description = "Уникальный UUID ключ для предотвращения повторной отправки одной и той же формы входа",
+                            required = false,
+                            schema = @Schema(type = "string", example = "987f6543-e89b-12d3-a456-426614174000")
+                    )
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Успешный вход — возвращена пара токенов (Access & Refresh Token)"),
+                    @ApiResponse(responseCode = "401", description = "Неверный логин или пароль"),
+                    @ApiResponse(responseCode = "400", description = "Неверный формат входных данных")
+            }
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Учетные данные для входа (обычно LoginRequestDto/AuthDto)",
+            required = true,
+            // Здесь вы можете указать класс DTO для логина (например, UserLoginDto.class), если он у вас есть
+            content = @Content(schema = @Schema(type = "object", example = "{\"username\":\"alex\",\"password\":\"secret123\"}"))
+    )
     @PostMapping("/login")
     public Mono<ResponseEntity<String>> login(
         @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
@@ -103,6 +161,29 @@ public class UserController {
      *
      * @return A Mono containing the response from the OAuth2 service.
      */
+    @Operation(
+            summary = "Обновление пары токенов (Refresh Token)",
+            description = "Принимает текущий Refresh Token, проверяет его валидность в сервисе OAuth2 и возвращает новую пару токенов доступа.",
+            parameters = {
+                    @Parameter(
+                            name = "Idempotency-Key",
+                            in = ParameterIn.HEADER,
+                            description = "Уникальный UUID ключ для предотвращения одновременных повторных запросов на обновление токенов",
+                            required = false,
+                            schema = @Schema(type = "string", example = "a1b2c3d4-e89b-12d3-a456-426614174000")
+                    )
+            },
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Токены успешно обновлены — возвращена новая пара токенов"),
+                    @ApiResponse(responseCode = "403", description = "Refresh Token недействителен или его время жизни истекло"),
+                    @ApiResponse(responseCode = "400", description = "Неверный формат входящего запроса")
+            }
+    )
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Тело запроса, содержащее Refresh Token",
+            required = true,
+            content = @Content(schema = @Schema(type = "object", example = "{\"refreshToken\":\"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"}"))
+    )
     @PostMapping("/refresh-token")
     public Mono<ResponseEntity<String>> refreshToken(
         @RequestHeader(value = "Idempotency-Key", required = false) String idempotencyKey,
