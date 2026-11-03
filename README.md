@@ -1,4 +1,6 @@
 # Java API Gateway Microservice
+**Author:** Alexander Kuziv  
+**Project:** <a href="https://github.com/makklays/secure-credit-hub">Secure Credit Hub</a>
 
 <p align="left">
     <img src="./src/main/resources/static/images/schema-gateway-api.png" />
