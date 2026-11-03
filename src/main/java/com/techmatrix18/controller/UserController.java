@@ -29,7 +29,6 @@ import reactor.core.publisher.Mono;
 @RequestMapping("/api/v1/users")
 @Tag(name = "User Controller", description = "Управление пользователями и аутентификация")
 public class UserController {
-
     private final WebClient webClient;
 
     public UserController(
