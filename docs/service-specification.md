@@ -1,6 +1,6 @@
 # Service Specification: API Gateway Service
 **Автор:** Александр Кузив  
-**Проект:** Secure Credit Hub
+**Проект:** <a href="https://github.com/makklays/secure-credit-hub">Secure Credit Hub</a>
 
 ## 1. Business Capability & Domain (Бизнес-контекст)
 * **Domain (DDD Context):** Укажите, к какому ограниченному контексту (Bounded Context) относится сервис (например, `API Management & Routing` или `Currency Exchange Core`).
